@@ -1,9 +1,9 @@
-import cron from 'node-cron'
+import * as cron from 'node-cron'
 import prisma from '../config/database'
 import { emailService } from './emailService'
 import { safeLog } from '../utils/logger'
 
-let scheduledTask: cron.ScheduledTask | null = null
+let scheduledTask: any = null
 
 export const reminderService = {
   // Executa todo dia às 18:00 para enviar lembretes do dia seguinte
