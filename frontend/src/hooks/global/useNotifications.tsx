@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
+import logoSvg from '../../assets/images/logo.svg'
 
 interface NotificationOptions {
   title: string
@@ -46,7 +47,7 @@ export const useNotifications = () => {
     try {
       const notification = new Notification(options.title, {
         body: options.body,
-        icon: options.icon || '/src/assets/images/logo.svg',
+        icon: options.icon || logoSvg,
         tag: options.tag,
         requireInteraction: options.requireInteraction || false
       })

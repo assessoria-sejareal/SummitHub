@@ -1,6 +1,7 @@
 import { useAuth } from '../hooks/global/useAuth'
 import { Button } from '../components/ui/Button'
 import { Link, useLocation } from 'react-router-dom'
+import logoSvg from '../assets/images/logo.svg'
 
 export const Header = () => {
   const { user, logout } = useAuth()
@@ -11,7 +12,7 @@ export const Header = () => {
       <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-14 sm:h-16">
           <div className="flex items-center space-x-2 sm:space-x-3">
-            <img src="/src/assets/images/logo.svg" alt="Summit Hub" className="h-8 w-8 sm:h-12 sm:w-12" />
+            <img src={logoSvg} alt="Summit Hub" className="h-8 w-8 sm:h-12 sm:w-12" />
             <h1 className="text-lg sm:text-xl font-bold text-gray-900">Summit Hub</h1>
           </div>
           
