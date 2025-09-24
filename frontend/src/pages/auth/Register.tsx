@@ -9,6 +9,7 @@ import { Input } from '../../components/ui/Input'
 import { Button } from '../../components/ui/Button'
 import { phoneMask } from '../../utils/masks'
 import { cpfMask } from '../../utils/masks'
+import logoSvg from '../../assets/images/logo.svg'
 
 export const Register = () => {
   const [loading, setLoading] = useState(false)
@@ -40,7 +41,7 @@ export const Register = () => {
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
       <div className="max-w-md w-full space-y-6 sm:space-y-8">
         <div className="text-center">
-          <img src="/src/assets/images/logo.svg" alt="Summit Hub" className="mx-auto h-28 w-28 sm:h-32 sm:w-32 mb-4 transition-transform duration-300 hover:scale-110 cursor-pointer" />
+          <img src={logoSvg} alt="Summit Hub" className="mx-auto h-28 w-28 sm:h-32 sm:w-32 mb-4 transition-transform duration-300 hover:scale-110 cursor-pointer" />
           <h2 className="text-2xl sm:text-3xl font-extrabold text-gray-900">
             Summit Hub
           </h2>
