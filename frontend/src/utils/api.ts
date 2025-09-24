@@ -1,9 +1,9 @@
 import axios from 'axios'
 
-console.log('VITE_API_URL:', import.meta.env.VITE_API_URL)
-const baseURL = import.meta.env.VITE_API_URL 
-  ? `${import.meta.env.VITE_API_URL}/api`
+const baseURL = window.location.hostname.includes('railway.app')
+  ? 'https://summithub-production.up.railway.app/api'
   : 'http://localhost:3001/api'
+
 console.log('API baseURL:', baseURL)
 
 const api = axios.create({
@@ -20,8 +20,8 @@ api.interceptors.request.use(async (config) => {
   if (config.method === 'post' && !config.url?.includes('/csrf-token')) {
     try {
       const csrfResponse = await axios.get(
-        import.meta.env.VITE_API_URL
-          ? `${import.meta.env.VITE_API_URL}/api/auth/csrf-token`
+        window.location.hostname.includes('railway.app')
+          ? 'https://summithub-production.up.railway.app/api/auth/csrf-token'
           : 'http://localhost:3001/api/auth/csrf-token'
       )
       config.headers['x-csrf-token'] = csrfResponse.data.csrfToken
