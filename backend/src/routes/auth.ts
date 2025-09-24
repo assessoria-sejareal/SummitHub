@@ -6,7 +6,7 @@ const router = Router()
 const authController = new AuthController()
 
 router.get('/csrf-token', csrfTokenEndpoint)
-router.post('/register', csrfProtection, authController.register)
-router.post('/login', csrfProtection, authController.login)
+router.post('/register', authController.register)
+router.post('/login', authController.login)
 
 export default router
