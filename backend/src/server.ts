@@ -22,15 +22,7 @@ const allowedOrigins = [
 safeLog.info('Allowed CORS origins:', allowedOrigins)
 
 app.use(cors({
-  origin: (origin, callback) => {
-    safeLog.info(`CORS request from origin: ${origin}`)
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true)
-    } else {
-      safeLog.error(`CORS blocked origin: ${origin}`)
-      callback(new Error('Not allowed by CORS'))
-    }
-  },
+  origin: true,
   credentials: true
 }))
 
