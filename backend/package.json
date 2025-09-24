@@ -5,8 +5,8 @@
   "main": "dist/server.js",
   "scripts": {
     "dev": "tsx watch src/server.ts",
-    "build": "tsc && tsc prisma/seed.ts --outDir dist/prisma --target es2020 --module commonjs && prisma generate",
-    "start": "npm run db:deploy && node dist/server.js",
+    "build": "tsc && prisma generate",
+    "start": "prisma db push --accept-data-loss && node dist/server.js",
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
     "db:migrate": "prisma migrate deploy",
