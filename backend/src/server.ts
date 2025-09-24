@@ -4,6 +4,7 @@ import { env } from './config/env'
 import { sanitizeMiddleware } from './middlewares/sanitize'
 import { reminderService } from './services/reminderService'
 import { safeLog } from './utils/logger'
+import prisma from './config/database'
 import authRoutes from './routes/auth'
 import bookingRoutes from './routes/bookings'
 import adminRoutes from './routes/admin'
@@ -48,8 +49,34 @@ app.get('/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString() })
 })
 
-const server = app.listen(env.PORT, () => {
+// Create stations if they don't exist
+async function createStationsIfNeeded() {
+  try {
+    const stationCount = await prisma.station.count()
+    if (stationCount === 0) {
+      safeLog.info('Creating stations...')
+      for (let i = 1; i <= 5; i++) {
+        await prisma.station.create({
+          data: {
+            number: i,
+            status: 'ACTIVE'
+          }
+        })
+      }
+      safeLog.info('✅ 5 stations created successfully!')
+    } else {
+      safeLog.info(`✅ ${stationCount} stations already exist`)
+    }
+  } catch (error) {
+    safeLog.error('❌ Error creating stations:', error)
+  }
+}
+
+const server = app.listen(env.PORT, async () => {
   safeLog.info(`Servidor iniciado na porta ${env.PORT}`)
+  
+  // Create stations if needed
+  await createStationsIfNeeded()
   
   // Iniciar serviço de lembretes
   reminderService.startReminderScheduler()
