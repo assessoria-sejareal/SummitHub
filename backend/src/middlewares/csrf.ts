@@ -1,10 +1,6 @@
 import { Request, Response, NextFunction } from 'express'
 import crypto from 'crypto'
 
-interface CSRFRequest extends Request {
-  csrfToken?: string
-}
-
 const tokens = new Map<string, number>()
 
 // Cleanup expired tokens every 5 minutes
@@ -23,7 +19,7 @@ export const generateCSRFToken = (): string => {
   return token
 }
 
-export const csrfProtection = (req: CSRFRequest, res: Response, next: NextFunction) => {
+export const csrfProtection = (req: Request, res: Response, next: NextFunction) => {
   // Apply CSRF to all state-changing methods
   if (!['POST', 'PUT', 'PATCH', 'DELETE'].includes(req.method)) {
     return next()
