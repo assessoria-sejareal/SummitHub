@@ -35,10 +35,17 @@ api.interceptors.request.use(async (config) => {
 
 api.interceptors.response.use(
   (response) => response,
-  (error) => {
+  async (error) => {
     if (error.response?.status === 401) {
+      // Try to refresh token or redirect to login
       localStorage.removeItem('token')
       localStorage.removeItem('user')
+      
+      // Show user-friendly message
+      if (window.location.pathname !== '/login') {
+        alert('Sua sessão expirou. Faça login novamente.')
+      }
+      
       window.location.href = '/login'
     }
     return Promise.reject(error)
