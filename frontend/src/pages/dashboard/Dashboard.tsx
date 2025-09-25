@@ -14,6 +14,7 @@ import { StatusIndicator } from '../../components/ui/StatusIndicator'
 import { NotificationBanner } from '../../components/ui/NotificationBanner'
 import { ToastContainer } from '../../components/ui/ToastNotification'
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog'
+import { CardSkeleton, BookingSkeleton, StationSkeleton, StatsSkeleton } from '../../components/ui/Skeleton'
 import { useRealTimeStatus } from '../../hooks/pages/useRealTimeStatus'
 import { useConfirm } from '../../hooks/ui/useConfirm'
 import { useNotifications } from '../../hooks/global/useNotifications'
@@ -30,6 +31,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 export const Dashboard = () => {
   const [userBookings, setUserBookings] = useState<Booking[]>([])
   const [loading, setLoading] = useState(false)
+  const [cancellingId, setCancellingId] = useState<string | null>(null)
   const [error, setError] = useState('')
   const [selectedDate, setSelectedDate] = useState(new Date())
   const [selectedStation, setSelectedStation] = useState('')
@@ -95,6 +97,7 @@ export const Dashboard = () => {
 
   const handleCancel = async (id: string) => {
     try {
+      setCancellingId(id)
       const booking = userBookings.find(b => b.id === id)
       await bookingsApi.cancel(id)
       await loadUserBookings()
@@ -108,6 +111,8 @@ export const Dashboard = () => {
       const message = err.response?.data?.message || 'Erro ao cancelar reserva'
       setError(message)
       showError('Erro ao Cancelar', message)
+    } finally {
+      setCancellingId(null)
     }
   }
 
@@ -128,7 +133,7 @@ export const Dashboard = () => {
           onRefresh={refresh}
         />
         
-        <QuickStats stations={stations} userBookings={userBookings} />
+        {isLoading ? <StatsSkeleton /> : <QuickStats stations={stations} userBookings={userBookings} />}
         
         <motion.div 
           className="grid grid-cols-1 xl:grid-cols-3 gap-4 sm:gap-6 mt-4"
@@ -186,44 +191,50 @@ export const Dashboard = () => {
                 </div>
               </div>
               
-              <StationCatalog
-                stations={stations}
-                selectedStation={selectedStation}
-                onStationSelect={(stationId) => {
-                  setSelectedStation(stationId)
-                  setValue('stationId', stationId)
-                }}
-                onSeatSelect={(stationId, seatId) => {
-                  console.log('Seat selected:', { stationId, seatId })
-                }}
-                onBookingConfirm={async (bookingData) => {
-                  try {
-                    const seatParts = bookingData.seat.split('-')
-                    if (seatParts.length !== 2) {
-                      throw new Error('Formato de assento inválido')
+              {isLoading ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {[1, 2, 3, 4, 5].map(i => <StationSkeleton key={i} />)}
+                </div>
+              ) : (
+                <StationCatalog
+                  stations={stations}
+                  selectedStation={selectedStation}
+                  onStationSelect={(stationId) => {
+                    setSelectedStation(stationId)
+                    setValue('stationId', stationId)
+                  }}
+                  onSeatSelect={(stationId, seatId) => {
+                    console.log('Seat selected:', { stationId, seatId })
+                  }}
+                  onBookingConfirm={async (bookingData) => {
+                    try {
+                      const seatParts = bookingData.seat.split('-')
+                      if (seatParts.length !== 2) {
+                        throw new Error('Formato de assento inválido')
+                      }
+                      const seatNumber = parseInt(seatParts[1])
+                      if (isNaN(seatNumber)) {
+                        throw new Error('Número do assento inválido')
+                      }
+                      const booking = await bookingsApi.create({
+                        stationId: bookingData.stationId,
+                        date: bookingData.date,
+                        startTime: bookingData.startTime,
+                        endTime: bookingData.endTime,
+                        seatNumber: seatNumber
+                      })
+                      await loadUserBookings()
+                      refresh()
+                      success('Reserva Confirmada!', `Assento ${seatNumber} reservado com sucesso!`)
+                    } catch (err: any) {
+                      const message = err.response?.data?.message || 'Erro ao criar reserva'
+                      showError('Erro na Reserva', message)
+                      throw err
                     }
-                    const seatNumber = parseInt(seatParts[1])
-                    if (isNaN(seatNumber)) {
-                      throw new Error('Número do assento inválido')
-                    }
-                    const booking = await bookingsApi.create({
-                      stationId: bookingData.stationId,
-                      date: bookingData.date,
-                      startTime: bookingData.startTime,
-                      endTime: bookingData.endTime,
-                      seatNumber: seatNumber
-                    })
-                    await loadUserBookings()
-                    refresh()
-                    success('Reserva Confirmada!', `Assento ${seatNumber} reservado com sucesso!`)
-                  } catch (err: any) {
-                    const message = err.response?.data?.message || 'Erro ao criar reserva'
-                    showError('Erro na Reserva', message)
-                    throw err
-                  }
-                }}
-                showStatus={true}
-              />
+                  }}
+                  showStatus={true}
+                />
+              )}
               
               {selectedStation && (
                 <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
@@ -272,7 +283,9 @@ export const Dashboard = () => {
             
             <div className="space-y-3">
               <AnimatePresence>
-                {userBookings.length === 0 ? (
+                {loading ? (
+                  [1, 2, 3].map(i => <BookingSkeleton key={i} />)
+                ) : userBookings.length === 0 ? (
                   <motion.div 
                     key="empty"
                     className="text-center py-8"
@@ -324,6 +337,8 @@ export const Dashboard = () => {
                       >
                         <Button
                           variant="secondary"
+                          loading={cancellingId === booking.id}
+                          disabled={cancellingId === booking.id}
                           onClick={async () => {
                             const confirmed = await confirm({
                               title: 'Cancelar Reserva',
@@ -338,8 +353,14 @@ export const Dashboard = () => {
                           }}
                           className="text-red-600 hover:bg-red-100 border-red-200 text-sm px-4 py-2 w-full sm:w-auto font-medium transition-colors flex items-center justify-center space-x-1"
                         >
-                          <Close sx={{ fontSize: 16 }} />
-                          <span>Cancelar</span>
+                          {cancellingId === booking.id ? (
+                            <span>Cancelando...</span>
+                          ) : (
+                            <>
+                              <Close sx={{ fontSize: 16 }} />
+                              <span>Cancelar</span>
+                            </>
+                          )}
                         </Button>
                       </motion.div>
                     </div>
