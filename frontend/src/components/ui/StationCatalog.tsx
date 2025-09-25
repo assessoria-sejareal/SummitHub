@@ -81,6 +81,7 @@ export const StationCatalog = ({ stations, selectedStation, onStationSelect, onS
     endTime: ''
   })
   const [loading, setLoading] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   const handleStationClick = (station: Station) => {
     const details = stationDetails[station.number]
@@ -184,7 +185,11 @@ export const StationCatalog = ({ stations, selectedStation, onStationSelect, onS
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            onClick={() => setSelectedStationDetails(null)}
+            onClick={(e) => {
+              if (!isSubmitting) {
+                setSelectedStationDetails(null)
+              }
+            }}
           >
             <motion.div
               className="bg-white rounded-xl max-w-7xl w-full max-h-[96vh] overflow-y-auto shadow-2xl"
@@ -200,8 +205,15 @@ export const StationCatalog = ({ stations, selectedStation, onStationSelect, onS
                     <p className="text-base sm:text-lg text-gray-600 mt-2 leading-relaxed">{selectedStationDetails.description}</p>
                   </div>
                   <button
-                    onClick={() => setSelectedStationDetails(null)}
-                    className="p-3 hover:bg-gray-100 rounded-full flex-shrink-0 transition-colors"
+                    onClick={() => {
+                      if (!isSubmitting) {
+                        setSelectedStationDetails(null)
+                      }
+                    }}
+                    disabled={isSubmitting}
+                    className={`p-3 rounded-full flex-shrink-0 transition-colors ${
+                      isSubmitting ? 'cursor-not-allowed opacity-50' : 'hover:bg-gray-100'
+                    }`}
                   >
                     <X className="w-6 h-6 sm:w-7 sm:h-7 text-gray-500" />
                   </button>
@@ -299,16 +311,22 @@ export const StationCatalog = ({ stations, selectedStation, onStationSelect, onS
                 <div className="mt-6 sm:mt-8 flex flex-col sm:flex-row justify-end gap-3 sm:gap-4">
                   <button
                     onClick={() => {
-                      setSelectedStationDetails(null)
-                      setSelectedSeat('')
+                      if (!isSubmitting) {
+                        setSelectedStationDetails(null)
+                        setSelectedSeat('')
+                      }
                     }}
-                    className="px-6 py-3 text-gray-600 hover:bg-gray-100 rounded-lg text-base sm:text-lg font-medium transition-colors order-2 sm:order-1 min-h-[48px]"
+                    disabled={isSubmitting}
+                    className={`px-6 py-3 rounded-lg text-base sm:text-lg font-medium transition-colors order-2 sm:order-1 min-h-[48px] ${
+                      isSubmitting ? 'text-gray-400 cursor-not-allowed' : 'text-gray-600 hover:bg-gray-100'
+                    }`}
                   >
                     Cancelar
                   </button>
                   <button
                     onClick={async () => {
-                      if (selectedSeat && bookingData.startTime && bookingData.endTime && onBookingConfirm) {
+                      if (selectedSeat && bookingData.startTime && bookingData.endTime && onBookingConfirm && !isSubmitting) {
+                        setIsSubmitting(true)
                         setLoading(true)
                         try {
                           await onBookingConfirm({
@@ -318,6 +336,7 @@ export const StationCatalog = ({ stations, selectedStation, onStationSelect, onS
                             startTime: bookingData.startTime,
                             endTime: bookingData.endTime
                           })
+                          // Only close modal and reset if successful
                           setSelectedStationDetails(null)
                           setSelectedSeat('')
                           setBookingData({
@@ -327,19 +346,22 @@ export const StationCatalog = ({ stations, selectedStation, onStationSelect, onS
                           })
                         } catch (error) {
                           console.error('Erro ao confirmar reserva:', error)
+                          // Keep modal open on error so user can retry
                         } finally {
                           setLoading(false)
+                          setIsSubmitting(false)
                         }
                       }
                     }}
-                    disabled={!selectedSeat || !bookingData.startTime || !bookingData.endTime || loading}
+                    disabled={!selectedSeat || !bookingData.startTime || !bookingData.endTime || loading || isSubmitting}
                     className={`px-6 sm:px-8 py-3 rounded-lg transition-colors text-base sm:text-lg font-semibold order-1 sm:order-2 min-h-[48px] ${
                       selectedSeat && bookingData.startTime && bookingData.endTime && !loading
                         ? 'bg-green-600 text-white hover:bg-green-700 shadow-lg' 
                         : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                     }`}
                   >
-                    {loading ? 'Confirmando...' : 
+                    {isSubmitting ? 'Processando...' : 
+                     loading ? 'Confirmando...' : 
                      selectedSeat && bookingData.startTime && bookingData.endTime ? 'Confirmar Reserva' : 
                      !selectedSeat ? 'Selecione um Assento' : 'Preencha os horários'}
                   </button>
