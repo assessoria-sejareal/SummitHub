@@ -178,7 +178,7 @@ export const SeatMap = ({ stationNumber, onSeatSelect, selectedSeat, stationId, 
           <div className="relative w-full" style={{ aspectRatio: '16/10' }}>
             <svg 
               width="100%" 
-              height="100%" 
+              height="100%"
               viewBox={config.viewBox}
               className="border border-gray-200 rounded-xl bg-white touch-manipulation select-none"
             >
@@ -305,7 +305,6 @@ export const SeatMap = ({ stationNumber, onSeatSelect, selectedSeat, stationId, 
                         />
                       </motion.g>
                     )}
-                    
 
                   </motion.g>
                 )
@@ -361,67 +360,66 @@ export const SeatMap = ({ stationNumber, onSeatSelect, selectedSeat, stationId, 
         <div className="mt-4 bg-white p-4 rounded-lg shadow-lg border border-gray-200 min-h-[140px] flex items-center justify-center">
           {(hoveredSeat || selectedSeat) ? (
             <div className="text-center w-full">
-              <h3 className="text-lg font-bold mb-3 text-gray-900 flex items-center justify-center space-x-2">
-                <span className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-bold text-sm">
-                  {displaySeat.split('-')[1]}
-                </span>
-                <span>Assento {displaySeat.split('-')[1]}</span>
-              </h3>
-              
               {(() => {
                 const displaySeat = hoveredSeat || selectedSeat
                 const seat = seats.find(s => s.id === displaySeat)
-                if (seat?.bookings && seat.bookings.length > 0) {
-                  const booking = seat.bookings[0]
-                  return (
-                    <div className="space-y-3">
-                      <div className="bg-red-50 p-3 rounded-lg border border-red-200">
-                        <div className="flex items-center justify-center space-x-2 mb-1">
-                          <AccessTime className="text-red-600" sx={{ fontSize: 18 }} />
-                          <p className="text-red-700 font-semibold">
-                            Ocupado: {booking.startTime} - {booking.endTime}
+                
+                return (
+                  <>
+                    <h3 className="text-lg font-bold mb-3 text-gray-900 flex items-center justify-center space-x-2">
+                      <span className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-bold text-sm">
+                        {displaySeat.split('-')[1]}
+                      </span>
+                      <span>Assento {displaySeat.split('-')[1]}</span>
+                    </h3>
+                    
+                    {seat?.bookings && seat.bookings.length > 0 ? (
+                      <div className="space-y-3">
+                        <div className="bg-red-50 p-3 rounded-lg border border-red-200">
+                          <div className="flex items-center justify-center space-x-2 mb-1">
+                            <AccessTime className="text-red-600" sx={{ fontSize: 18 }} />
+                            <p className="text-red-700 font-semibold">
+                              Ocupado: {seat.bookings[0].startTime} - {seat.bookings[0].endTime}
+                            </p>
+                          </div>
+                          <div className="flex items-center justify-center space-x-2">
+                            <Person className="text-red-600" sx={{ fontSize: 16 }} />
+                            <p className="text-red-600 text-sm">
+                              {seat.bookings[0].user?.name || 'Usuário'}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="bg-green-50 p-3 rounded-lg border border-green-200">
+                          <div className="flex items-center justify-center space-x-2">
+                            <CheckCircle className="text-green-600" sx={{ fontSize: 18 }} />
+                            <p className="text-green-700 font-semibold">
+                              Livre após: {getNextAvailableTime(seat.bookings)}
+                            </p>
+                          </div>
+                          <p className="text-green-600 text-sm mt-1">
+                            Disponível para nova reserva
+                          </p>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+                        <div className="flex items-center justify-center space-x-2 mb-2">
+                          <CheckCircle className="text-green-600" sx={{ fontSize: 20 }} />
+                          <p className="text-green-700 font-semibold text-lg">
+                            Livre o dia todo!
                           </p>
                         </div>
                         <div className="flex items-center justify-center space-x-2">
-                          <Person className="text-red-600" sx={{ fontSize: 16 }} />
-                          <p className="text-red-600 text-sm">
-                            {booking.user?.name || 'Usuário'}
+                          <AccessTime className="text-green-600" sx={{ fontSize: 16 }} />
+                          <p className="text-green-600 text-sm">
+                            Disponível das 08:00 às 18:00
                           </p>
                         </div>
                       </div>
-                      <div className="bg-green-50 p-3 rounded-lg border border-green-200">
-                        <div className="flex items-center justify-center space-x-2">
-                          <CheckCircle className="text-green-600" sx={{ fontSize: 18 }} />
-                          <p className="text-green-700 font-semibold">
-                            Livre após: {getNextAvailableTime(seat.bookings)}
-                          </p>
-                        </div>
-                        <p className="text-green-600 text-sm mt-1">
-                          Disponível para nova reserva
-                        </p>
-                      </div>
-                    </div>
-                  )
-                } else {
-                  return (
-                    <div className="bg-green-50 p-4 rounded-lg border border-green-200">
-                      <div className="flex items-center justify-center space-x-2 mb-2">
-                        <CheckCircle className="text-green-600" sx={{ fontSize: 20 }} />
-                        <p className="text-green-700 font-semibold text-lg">
-                          Livre o dia todo!
-                        </p>
-                      </div>
-                      <div className="flex items-center justify-center space-x-2">
-                        <AccessTime className="text-green-600" sx={{ fontSize: 16 }} />
-                        <p className="text-green-600 text-sm">
-                          Disponível das 08:00 às 18:00
-                        </p>
-                      </div>
-                    </div>
-                  )
-                }
-              })()
-              }
+                    )}
+                  </>
+                )
+              })()}
             </div>
           ) : (
             <p className="text-gray-500 text-center">
@@ -444,7 +442,6 @@ export const SeatMap = ({ stationNumber, onSeatSelect, selectedSeat, stationId, 
             </p>
           </motion.div>
         )}
-        
 
       </div>
     </div>
