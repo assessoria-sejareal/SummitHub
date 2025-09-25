@@ -143,7 +143,7 @@ router.get('/analytics/peak-hours', authenticateToken, requireAdmin, async (req,
 })
 
 // Cancelar reserva (admin)
-router.delete('/bookings/:id', authenticateToken, requireAdmin, csrfProtection, async (req, res) => {
+router.delete('/bookings/:id', authenticateToken, requireAdmin, async (req, res) => {
   try {
     const { id } = req.params
     const { reason } = req.body
@@ -179,7 +179,7 @@ const stationStatusSchema = z.object({
   reason: z.string().optional()
 })
 
-router.patch('/stations/:id/status', authenticateToken, requireAdmin, csrfProtection, async (req, res) => {
+router.patch('/stations/:id/status', authenticateToken, requireAdmin, async (req, res) => {
   try {
     const { id } = req.params
     const { status, reason } = stationStatusSchema.parse(req.body)
