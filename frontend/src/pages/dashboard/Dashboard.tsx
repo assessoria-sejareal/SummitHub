@@ -13,7 +13,9 @@ import { UpcomingBookings } from '../../components/ui/UpcomingBookings'
 import { StatusIndicator } from '../../components/ui/StatusIndicator'
 import { NotificationBanner } from '../../components/ui/NotificationBanner'
 import { ToastContainer } from '../../components/ui/ToastNotification'
+import { ConfirmDialog } from '../../components/ui/ConfirmDialog'
 import { useRealTimeStatus } from '../../hooks/pages/useRealTimeStatus'
+import { useConfirm } from '../../hooks/ui/useConfirm'
 import { useNotifications } from '../../hooks/global/useNotifications'
 import { useBookingReminders } from '../../hooks/pages/useBookingReminders'
 import { useToast } from '../../hooks/global/useToast'
@@ -36,6 +38,7 @@ export const Dashboard = () => {
   const { isSupported, permission, requestPermission } = useNotifications()
   const { notifyBookingCreated, notifyBookingCancelled } = useBookingReminders(userBookings)
   const { toasts, removeToast, success, error: showError } = useToast()
+  const { confirm, isOpen, options, handleConfirm, handleCancel: handleConfirmCancel } = useConfirm()
 
   const { register, handleSubmit, formState: { errors }, reset, setValue } = useForm<CreateBookingData>({
     resolver: zodResolver(createBookingSchema)
@@ -321,8 +324,15 @@ export const Dashboard = () => {
                       >
                         <Button
                           variant="secondary"
-                          onClick={() => {
-                            if (window.confirm('Tem certeza que deseja cancelar esta reserva?')) {
+                          onClick={async () => {
+                            const confirmed = await confirm({
+                              title: 'Cancelar Reserva',
+                              message: `Tem certeza que deseja cancelar a reserva da Estação ${booking.station?.number}${booking.seatNumber ? ` - Assento ${booking.seatNumber}` : ''}?`,
+                              confirmText: 'Sim, cancelar',
+                              cancelText: 'Não, manter',
+                              confirmVariant: 'danger'
+                            })
+                            if (confirmed) {
                               handleCancel(booking.id)
                             }
                           }}
@@ -344,6 +354,17 @@ export const Dashboard = () => {
       </div>
       
       <ToastContainer toasts={toasts} onRemove={removeToast} />
+      
+      <ConfirmDialog
+        isOpen={isOpen}
+        onClose={handleConfirmCancel}
+        onConfirm={handleConfirm}
+        title={options.title}
+        message={options.message}
+        confirmText={options.confirmText}
+        cancelText={options.cancelText}
+        confirmVariant={options.confirmVariant}
+      />
     </div>
   )
 }
