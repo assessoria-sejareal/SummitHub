@@ -6,6 +6,7 @@ import { useAuth } from '../../hooks/global/useAuth'
 import { RegisterData } from '../../@types/auth'
 import { registerSchema } from '../../validators/auth'
 import { Input } from '../../components/ui/Input'
+import { PasswordInput } from '../../components/ui/PasswordInput'
 import { Button } from '../../components/ui/Button'
 import { phoneMask } from '../../utils/masks'
 import { cpfMask } from '../../utils/masks'
@@ -98,9 +99,8 @@ export const Register = () => {
               error={errors.email?.message}
             />
             
-            <Input
+            <PasswordInput
               label="Senha"
-              type="password"
               placeholder="Mínimo 8 caracteres"
               {...register('password')}
               error={errors.password?.message}

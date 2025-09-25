@@ -6,6 +6,7 @@ import { useAuth } from '../../hooks/global/useAuth'
 import { LoginData } from '../../@types/auth'
 import { loginSchema } from '../../validators/auth'
 import { Input } from '../../components/ui/Input'
+import { PasswordInput } from '../../components/ui/PasswordInput'
 import { Button } from '../../components/ui/Button'
 import logoSvg from '../../assets/images/logo.svg'
 
@@ -54,9 +55,8 @@ export const Login = () => {
               error={errors.email?.message}
             />
             
-            <Input
+            <PasswordInput
               label="Senha"
-              type="password"
               {...register('password')}
               error={errors.password?.message}
             />
