@@ -107,6 +107,31 @@ const enhanceStationsWithStatus = (stations: Station[], bookings: Booking[]): St
 
     // Calculate average usage (mock data for now)
     const averageUsage = Math.floor(Math.random() * 4) + 2 // 2-6 hours
+    
+    // Calculate insights
+    const todayBookingsCount = stationBookings.length
+    const totalSlotsToday = 10 // 8h-18h
+    const occupancyRate = todayBookingsCount > 0 ? Math.round((todayBookingsCount / totalSlotsToday) * 100) : 0
+    const remainingSlots = Math.max(0, totalSlotsToday - todayBookingsCount)
+    
+    // Generate personalized tips
+    const tips = {
+      1: 'Ideal para day trading com múltiplos monitores',
+      2: 'Perfeito para análises técnicas em ambiente privativo', 
+      3: 'Excelente para foco total em operações complexas',
+      4: 'Ambiente silencioso ideal para swing trading',
+      5: 'Flexível para diferentes estratégias de trading'
+    }
+    
+    // Generate urgency message
+    let urgencyMessage = ''
+    if (todayBookingsCount > 0) {
+      if (remainingSlots <= 2 && remainingSlots > 0) {
+        urgencyMessage = `Apenas ${remainingSlots} horário${remainingSlots > 1 ? 's' : ''} livre${remainingSlots > 1 ? 's' : ''} hoje`
+      } else if (remainingSlots === 0) {
+        urgencyMessage = 'Lotado hoje - reserve para amanhã'
+      }
+    }
 
     return {
       ...station,
@@ -114,7 +139,16 @@ const enhanceStationsWithStatus = (stations: Station[], bookings: Booking[]): St
       nextAvailable,
       occupiedUntil,
       averageUsage,
-      isAvailableNow: !currentBooking && station.status === 'ACTIVE'
+      isAvailableNow: !currentBooking && station.status === 'ACTIVE',
+      insights: {
+        occupancyRate,
+        bestTimeSlot: '14:00',
+        remainingSlots,
+        personalizedTip: tips[station.number as keyof typeof tips] || 'Ótima opção para trading',
+        urgencyMessage,
+        isPopular: todayBookingsCount > 0 && occupancyRate > 70,
+        isAvailableNow: remainingSlots > 0
+      }
     }
   })
 }
