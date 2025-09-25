@@ -113,21 +113,7 @@ export const SeatMap = ({ stationNumber, onSeatSelect, selectedSeat, stationId, 
   const loadSeatAvailability = async (startTime?: string, endTime?: string) => {
     try {
       setLoading(true)
-      const response = await stationsApi.getSeats(stationId, selectedDate, startTime, endTime)
-      
-      const seatData = response.seats.map((seat: any, index: number) => {
-        return {
-          id: seat.id,
-          x: config?.seatPositions[index]?.x || 0,
-          y: config?.seatPositions[index]?.y || 0,
-          available: seat.available,
-          bookings: seat.bookings || []
-        }
-      })
-      setSeats(seatData)
-    } catch (error) {
-      console.error('Error loading seat availability:', error)
-      // Fallback to all available if API fails
+      // Use fallback data directly since API doesn't exist yet
       const fallbackSeats = config?.seatPositions.map((pos, i) => ({
         id: `${stationNumber}-${i + 1}`,
         x: pos.x,
@@ -373,17 +359,18 @@ export const SeatMap = ({ stationNumber, onSeatSelect, selectedSeat, stationId, 
         
         {/* Fixed Tooltip Area - Always present to prevent layout shifts */}
         <div className="mt-4 bg-white p-4 rounded-lg shadow-lg border border-gray-200 min-h-[140px] flex items-center justify-center">
-          {hoveredSeat ? (
+          {(hoveredSeat || selectedSeat) ? (
             <div className="text-center w-full">
               <h3 className="text-lg font-bold mb-3 text-gray-900 flex items-center justify-center space-x-2">
                 <span className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-bold text-sm">
-                  {hoveredSeat.split('-')[1]}
+                  {displaySeat.split('-')[1]}
                 </span>
-                <span>Assento {hoveredSeat.split('-')[1]}</span>
+                <span>Assento {displaySeat.split('-')[1]}</span>
               </h3>
               
               {(() => {
-                const seat = seats.find(s => s.id === hoveredSeat)
+                const displaySeat = hoveredSeat || selectedSeat
+                const seat = seats.find(s => s.id === displaySeat)
                 if (seat?.bookings && seat.bookings.length > 0) {
                   const booking = seat.bookings[0]
                   return (
