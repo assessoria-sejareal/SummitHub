@@ -15,23 +15,28 @@ export class BookingController {
       console.log('Validated data:', { stationId, date, startTime, endTime, seatNumber, userId })
       
       // Buscar dados do usuário
+      console.log('Fetching user data for:', userId)
       const user = await prisma.user.findUnique({ 
         where: { id: userId },
         select: { fullName: true, cpf: true }
       })
+      console.log('User found:', user ? 'yes' : 'no')
       
       if (!user) {
         throw new AppError('Usuário não encontrado', 404)
       }
 
       // Verificar se a estação existe e está ativa
+      console.log('Checking station:', stationId)
       const station = await prisma.station.findUnique({ where: { id: stationId } })
+      console.log('Station found:', station ? `${station.number} (${station.status})` : 'no')
       if (!station || station.status !== 'ACTIVE') {
         throw new AppError('Estação não disponível', 400)
       }
 
       // Verificar conflitos de assento específico
       if (seatNumber) {
+        console.log('Checking conflicts for seat:', seatNumber)
         const conflictingBooking = await prisma.booking.findFirst({
           where: {
             stationId,
@@ -48,12 +53,14 @@ export class BookingController {
             ]
           }
         })
+        console.log('Conflict found:', conflictingBooking ? 'yes' : 'no')
 
         if (conflictingBooking) {
           throw new AppError(`Assento ${seatNumber} já está reservado neste horário`, 400)
         }
       }
 
+      console.log('Creating booking in database...')
       const booking = await prisma.booking.create({
         data: {
           userId,
@@ -72,22 +79,8 @@ export class BookingController {
         }
       })
 
-      // Enviar email de confirmação
-      try {
-        await emailService.sendBookingConfirmation({
-          userEmail: booking.user.email,
-          userName: booking.user.name,
-          stationNumber: booking.station.number,
-          seatNumber: booking.seatNumber || undefined,
-          date: date,
-          startTime: booking.startTime,
-          endTime: booking.endTime,
-          bookingId: booking.id
-        })
-      } catch (emailError) {
-        console.error('Erro ao enviar email de confirmação:', emailError)
-        // Não falha a reserva se o email falhar
-      }
+      // Email service temporarily disabled for debugging
+      console.log('Booking created, skipping email for now')
 
       console.log('Booking created successfully:', booking.id)
       res.status(201).json(booking)
