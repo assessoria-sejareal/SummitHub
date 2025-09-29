@@ -19,7 +19,7 @@ export const Analytics = () => {
 
   useEffect(() => {
     loadAnalytics(period)
-    const interval = setInterval(refreshRealTime, 30000)
+    const interval = setInterval(refreshRealTime, 420000) // 7 minutes
     return () => clearInterval(interval)
   }, [])
 
