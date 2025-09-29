@@ -20,6 +20,7 @@ export async function createAdminIfNeeded() {
     await prisma.user.create({
       data: {
         name: 'Administrador',
+        fullName: 'Administrador do Sistema',
         email: 'admin@summithub.com',
         password: hashedPassword,
         cpf: '00000000000',
