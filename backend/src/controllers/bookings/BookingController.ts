@@ -8,9 +8,11 @@ import { emailService } from '../../services/emailService'
 export class BookingController {
   async create(req: AuthRequest, res: Response) {
     try {
+      console.log('Creating booking with data:', req.body)
       const validatedData = createBookingSchema.parse(req.body)
       const { stationId, date, startTime, endTime, seatNumber } = validatedData
       const userId = req.userId!
+      console.log('Validated data:', { stationId, date, startTime, endTime, seatNumber, userId })
       
       // Buscar dados do usuário
       const user = await prisma.user.findUnique({ 
@@ -87,8 +89,10 @@ export class BookingController {
         // Não falha a reserva se o email falhar
       }
 
+      console.log('Booking created successfully:', booking.id)
       res.status(201).json(booking)
     } catch (error: any) {
+      console.error('Booking creation error:', error)
       const { message, statusCode } = handleError(error)
       res.status(statusCode).json({ message })
     }

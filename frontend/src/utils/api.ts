@@ -7,7 +7,8 @@ const baseURL = window.location.hostname.includes('railway.app')
 console.log('API baseURL:', baseURL)
 
 const api = axios.create({
-  baseURL
+  baseURL,
+  timeout: 30000 // 30 seconds timeout
 })
 
 api.interceptors.request.use(async (config) => {
