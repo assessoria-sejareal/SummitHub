@@ -32,7 +32,9 @@ export const Register = () => {
       await registerUser(data)
       navigate('/dashboard')
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Erro ao criar conta')
+      console.error('Erro no registro:', err)
+      const errorMessage = err.response?.data?.message || err.message || 'Erro ao criar conta'
+      setError(errorMessage)
     } finally {
       setLoading(false)
     }

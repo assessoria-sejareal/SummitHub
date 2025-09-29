@@ -8,6 +8,7 @@ import { loginSchema, registerSchema } from '../../validators/auth'
 export class AuthController {
   async register(req: Request, res: Response) {
     try {
+      console.log('Register request body:', req.body)
       const { fullName, cpf, phone, company, email, password } = registerSchema.parse(req.body)
 
       // Verificar email duplicado
@@ -41,6 +42,7 @@ export class AuthController {
 
       res.status(201).json({ user, token })
     } catch (error: any) {
+      console.error('Register error:', error)
       const { message, statusCode } = handleError(error)
       res.status(statusCode).json({ message })
     }
