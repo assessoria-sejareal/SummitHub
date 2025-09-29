@@ -5,6 +5,7 @@ import { sanitizeMiddleware } from './middlewares/sanitize'
 import { reminderService } from './services/reminderService'
 import { safeLog } from './utils/logger'
 import prisma from './config/database'
+import { createAdminIfNeeded } from './utils/createAdmin'
 import authRoutes from './routes/auth'
 import bookingRoutes from './routes/bookings'
 import adminRoutes from './routes/admin'
@@ -77,6 +78,9 @@ const server = app.listen(env.PORT, async () => {
   
   // Create stations if needed
   await createStationsIfNeeded()
+  
+  // Create admin user if needed
+  await createAdminIfNeeded()
   
   // Iniciar serviço de lembretes
   reminderService.startReminderScheduler()
