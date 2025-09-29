@@ -1,139 +1,106 @@
 import { Router } from 'express'
-import { PrismaClient } from '@prisma/client'
-import { authenticateToken } from '../middlewares/auth'
-import { csrfProtection } from '../middlewares/csrf'
+import prisma from '../config/database'
+import { authMiddleware } from '../middlewares/auth'
 
 const router = Router()
-const prisma = new PrismaClient()
 
-// Station configurations matching frontend
-const stationConfigs = {
-  1: { name: 'Estação 1', seats: 12 },
-  2: { name: 'Estação 2', seats: 4 },
-  3: { name: 'Estação 3', seats: 1 },
-  4: { name: 'Estação 4', seats: 1 },
-  5: { name: 'Estação 5', seats: 6 }
-}
-
-// Get all stations
-router.get('/', async (req, res) => {
+// Get stations with intelligent insights
+router.get('/', authMiddleware, async (req, res) => {
   try {
     const stations = await prisma.station.findMany({
-      orderBy: { number: 'asc' }
-    })
-    res.json(stations)
-  } catch (error) {
-    res.status(500).json({ message: 'Erro ao buscar estações' })
-  }
-})
-
-// Get seat availability for a station on a specific date
-router.get('/:stationId/seats', authenticateToken, async (req, res) => {
-  try {
-    const { stationId } = req.params
-    const { date } = req.query
-
-    if (!date) {
-      return res.status(400).json({ message: 'Data é obrigatória' })
-    }
-
-    const station = await prisma.station.findUnique({
-      where: { id: stationId }
-    })
-
-    if (!station) {
-      return res.status(404).json({ message: 'Estação não encontrada' })
-    }
-
-    const config = stationConfigs[station.number as keyof typeof stationConfigs]
-    if (!config) {
-      return res.status(404).json({ message: 'Configuração da estação não encontrada' })
-    }
-
-    // Get all bookings for this station on this date
-    // Get all bookings for this station to debug dates
-    const allBookings = await prisma.booking.findMany({
-      where: {
-        stationId,
-        status: 'ACTIVE'
-      },
-      select: {
-        seatNumber: true,
-        startTime: true,
-        endTime: true,
-        date: true,
-        user: {
-          select: {
-            name: true
+      include: {
+        bookings: {
+          where: {
+            status: 'ACTIVE',
+            date: {
+              gte: new Date(new Date().toDateString()) // Today onwards
+            }
           }
         }
       }
     })
-    
 
-    
-    // Filter by date string comparison
-    const dateStr = date as string
-    const filteredBookings = allBookings.filter(b => {
-      const bookingDateStr = b.date.toISOString().split('T')[0]
-      return bookingDateStr === dateStr
-    })
+    const now = new Date()
+    const today = now.toISOString().split('T')[0]
+    const currentHour = now.getHours()
 
-    // Generate seat availability
-    const seats = []
-    for (let i = 1; i <= config.seats; i++) {
-      const seatBookings = filteredBookings.filter(b => b.seatNumber === i)
-      seats.push({
-        id: `${station.number}-${i}`,
-        number: i,
-        available: seatBookings.length === 0,
-        bookings: seatBookings
-      })
-    }
-
-    res.json({
-      stationId,
-      stationNumber: station.number,
-      stationName: config.name,
-      date,
-      seats
-    })
-  } catch (error) {
-    console.error('Erro ao buscar assentos:', error)
-    res.status(500).json({ message: 'Erro ao buscar disponibilidade de assentos' })
-  }
-})
-
-// Check seat availability for specific time range
-router.post('/:stationId/seats/check', authenticateToken, csrfProtection, async (req, res) => {
-  try {
-    const { stationId } = req.params
-    const { seatNumber, date, startTime, endTime } = req.body
-
-    const conflicts = await prisma.booking.findMany({
-      where: {
-        stationId,
-        seatNumber: parseInt(seatNumber),
-        date: new Date(date),
-        status: 'ACTIVE',
-        OR: [
-          {
-            AND: [
-              { startTime: { lte: endTime } },
-              { endTime: { gte: startTime } }
-            ]
+    const stationsWithInsights = await Promise.all(stations.map(async (station) => {
+      // Calculate today's occupancy - only count bookings for TODAY
+      const todayBookings = await prisma.booking.count({
+        where: {
+          stationId: station.id,
+          status: 'ACTIVE',
+          date: {
+            gte: new Date(today + 'T00:00:00.000Z'),
+            lt: new Date(today + 'T23:59:59.999Z')
           }
-        ]
-      }
-    })
+        }
+      })
+      
+      console.log(`Station ${station.number}: ${todayBookings} bookings for ${today}`)
 
-    res.json({
-      available: conflicts.length === 0,
-      conflicts: conflicts.length
-    })
+      // Calculate available slots today (assuming 10 hours: 8h-18h)
+      const totalSlotsToday = 10
+      const occupancyRate = todayBookings > 0 ? Math.round((todayBookings / totalSlotsToday) * 100) : 0
+
+      // Find best time slots (least occupied hours) - only if there are bookings
+      let bestTimeSlot = '14:00' // Default best time
+      
+      if (todayBookings > 0) {
+        const hourlyBookings = await prisma.booking.groupBy({
+          by: ['startTime'],
+          where: {
+            stationId: station.id,
+            status: 'ACTIVE',
+            date: { gte: new Date(new Date().setDate(now.getDate() - 7)) } // Last 7 days
+          },
+          _count: { id: true },
+          orderBy: { _count: { id: 'asc' } }
+        })
+        
+        bestTimeSlot = hourlyBookings[0]?.startTime || '14:00'
+      }
+      
+      // Calculate remaining slots today
+      const remainingSlots = Math.max(0, totalSlotsToday - todayBookings)
+
+      // Generate personalized tip based on station characteristics
+      const tips = {
+        1: 'Ideal para day trading com múltiplos monitores',
+        2: 'Perfeito para análises técnicas em ambiente privativo', 
+        3: 'Excelente para foco total em operações complexas',
+        4: 'Ambiente silencioso ideal para swing trading',
+        5: 'Flexível para diferentes estratégias de trading'
+      }
+
+      // Generate urgency message only if there are actual bookings
+      let urgencyMessage = ''
+      if (todayBookings > 0) {
+        if (remainingSlots <= 2 && remainingSlots > 0) {
+          urgencyMessage = `Apenas ${remainingSlots} horário${remainingSlots > 1 ? 's' : ''} livre${remainingSlots > 1 ? 's' : ''} hoje`
+        } else if (remainingSlots === 0) {
+          urgencyMessage = 'Lotado hoje - reserve para amanhã'
+        }
+      }
+
+      return {
+        ...station,
+        insights: {
+          occupancyRate,
+          bestTimeSlot,
+          remainingSlots,
+          personalizedTip: tips[station.number as keyof typeof tips] || 'Ótima opção para trading',
+          urgencyMessage,
+          isPopular: todayBookings > 0 && occupancyRate > 70,
+          isAvailableNow: remainingSlots > 0 && currentHour >= 8 && currentHour < 18
+        }
+      }
+    }))
+
+    res.json(stationsWithInsights)
   } catch (error) {
-    console.error('Erro ao verificar disponibilidade:', error)
-    res.status(500).json({ message: 'Erro ao verificar disponibilidade' })
+    console.error('Error fetching stations with insights:', error)
+    res.status(500).json({ message: 'Erro ao buscar estações' })
   }
 })
 
