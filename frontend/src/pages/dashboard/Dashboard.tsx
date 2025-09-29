@@ -37,7 +37,7 @@ export const Dashboard = () => {
   const [selectedStation, setSelectedStation] = useState('')
   
   const [isModalOpen, setIsModalOpen] = useState(false)
-  const { bookings, stations, lastUpdate, isLoading, refresh } = useRealTimeStatus(60000, isModalOpen) // 1 minute instead of 30s
+  const { bookings, stations, lastUpdate, isLoading, refresh } = useRealTimeStatus(420000, isModalOpen) // 7 minutes
   const { isSupported, permission, requestPermission } = useNotifications()
   const { notifyBookingCreated, notifyBookingCancelled } = useBookingReminders(userBookings)
   const { toasts, removeToast, success, error: showError } = useToast()
