@@ -15,8 +15,16 @@ export const useRealTimeStatus = (intervalMs: number = 30000, paused: boolean = 
   const [stations, setStations] = useState<StationWithStatus[]>([])
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date())
   const [isLoading, setIsLoading] = useState(false)
+  const [lastFetchTime, setLastFetchTime] = useState<number>(0)
 
   const fetchData = useCallback(async () => {
+    // Debounce: prevent calls within 5 seconds of each other
+    const now = Date.now()
+    if (now - lastFetchTime < 5000) {
+      return
+    }
+    setLastFetchTime(now)
+    
     try {
       setIsLoading(true)
       let user = {}
@@ -44,11 +52,13 @@ export const useRealTimeStatus = (intervalMs: number = 30000, paused: boolean = 
     } finally {
       setIsLoading(false)
     }
-  }, [])
+  }, [lastFetchTime])
 
   useEffect(() => {
     fetchData()
-    
+  }, [fetchData])
+  
+  useEffect(() => {
     if (!paused) {
       const interval = setInterval(fetchData, intervalMs)
       return () => clearInterval(interval)
