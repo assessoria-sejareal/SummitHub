@@ -12,6 +12,7 @@ interface StationCatalogProps {
   compact?: boolean
   showStatus?: boolean
   onBookingConfirm?: (bookingData: any) => void
+  onModalStateChange?: (isOpen: boolean) => void
 }
 
 interface StationDetails {
@@ -72,7 +73,7 @@ const stationDetails: Record<number, StationDetails> = {
   }
 }
 
-export const StationCatalog = ({ stations, selectedStation, onStationSelect, onSeatSelect, compact = false, showStatus = false, onBookingConfirm }: StationCatalogProps) => {
+export const StationCatalog = ({ stations, selectedStation, onStationSelect, onSeatSelect, compact = false, showStatus = false, onBookingConfirm, onModalStateChange }: StationCatalogProps) => {
   const [selectedStationDetails, setSelectedStationDetails] = useState<StationDetails | null>(null)
   const [selectedSeat, setSelectedSeat] = useState<string>('')
   const [bookingData, setBookingData] = useState({
@@ -88,6 +89,7 @@ export const StationCatalog = ({ stations, selectedStation, onStationSelect, onS
     if (details) {
       setSelectedStationDetails(details)
       onStationSelect(station.id)
+      onModalStateChange?.(true)
     }
   }
 
@@ -188,6 +190,7 @@ export const StationCatalog = ({ stations, selectedStation, onStationSelect, onS
             onClick={(e) => {
               if (!isSubmitting) {
                 setSelectedStationDetails(null)
+                onModalStateChange?.(false)
               }
             }}
           >
@@ -208,6 +211,7 @@ export const StationCatalog = ({ stations, selectedStation, onStationSelect, onS
                     onClick={() => {
                       if (!isSubmitting) {
                         setSelectedStationDetails(null)
+                        onModalStateChange?.(false)
                       }
                     }}
                     disabled={isSubmitting}
@@ -314,6 +318,7 @@ export const StationCatalog = ({ stations, selectedStation, onStationSelect, onS
                       if (!isSubmitting) {
                         setSelectedStationDetails(null)
                         setSelectedSeat('')
+                        onModalStateChange?.(false)
                       }
                     }}
                     disabled={isSubmitting}
@@ -344,6 +349,7 @@ export const StationCatalog = ({ stations, selectedStation, onStationSelect, onS
                             startTime: '',
                             endTime: ''
                           })
+                          onModalStateChange?.(false)
                         } catch (error) {
                           console.error('Erro ao confirmar reserva:', error)
                           // Keep modal open on error so user can retry

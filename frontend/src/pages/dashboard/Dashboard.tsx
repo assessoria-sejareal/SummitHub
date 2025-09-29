@@ -36,7 +36,8 @@ export const Dashboard = () => {
   const [selectedDate, setSelectedDate] = useState(new Date())
   const [selectedStation, setSelectedStation] = useState('')
   
-  const { bookings, stations, lastUpdate, isLoading, refresh } = useRealTimeStatus()
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const { bookings, stations, lastUpdate, isLoading, refresh } = useRealTimeStatus(30000, isModalOpen)
   const { isSupported, permission, requestPermission } = useNotifications()
   const { notifyBookingCreated, notifyBookingCancelled } = useBookingReminders(userBookings)
   const { toasts, removeToast, success, error: showError } = useToast()
@@ -233,6 +234,7 @@ export const Dashboard = () => {
                     }
                   }}
                   showStatus={true}
+                  onModalStateChange={setIsModalOpen}
                 />
               )}
               

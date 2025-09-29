@@ -10,7 +10,7 @@ interface StationWithStatus extends Station {
   isAvailableNow?: boolean
 }
 
-export const useRealTimeStatus = (intervalMs: number = 30000) => {
+export const useRealTimeStatus = (intervalMs: number = 30000, paused: boolean = false) => {
   const [bookings, setBookings] = useState<Booking[]>([])
   const [stations, setStations] = useState<StationWithStatus[]>([])
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date())
@@ -49,10 +49,11 @@ export const useRealTimeStatus = (intervalMs: number = 30000) => {
   useEffect(() => {
     fetchData()
     
-    const interval = setInterval(fetchData, intervalMs)
-    
-    return () => clearInterval(interval)
-  }, [fetchData, intervalMs])
+    if (!paused) {
+      const interval = setInterval(fetchData, intervalMs)
+      return () => clearInterval(interval)
+    }
+  }, [fetchData, intervalMs, paused])
 
   return {
     bookings,
