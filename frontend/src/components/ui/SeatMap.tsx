@@ -8,10 +8,14 @@ interface SeatMapProps {
   stationNumber: number
   onSeatSelect: (seatId: string) => void
   selectedSeat?: string
+  selectedSeats?: string[]
+  selectAllMode?: boolean
   stationId: string
   selectedDate: string
   timeRange?: { startTime: string, endTime: string }
   onTimeRangeChange?: (startTime: string, endTime: string) => void
+  onMultipleSeatsSelect?: (seats: string[]) => void
+  onSelectAllModeChange?: (mode: boolean) => void
 }
 
 interface Seat {
@@ -92,6 +96,31 @@ const stationConfigs = {
       { x: 680, y: 260 }, // Assento 5
       { x: 843, y: 261 }, // Assento 6
     ]
+  },
+  6: {
+    name: 'Estação 6 - Sala de Eventos',
+    seats: 17,
+    viewBox: '0 0 1920 1080',
+    bgImage: '/assets/stations/station6.svg',
+    seatPositions: [
+      { x: 669, y: 58 },   // Assento 1
+      { x: 789, y: 44 },   // Assento 2
+      { x: 913, y: 52 },   // Assento 3
+      { x: 1040, y: 54 },  // Assento 4
+      { x: 669, y: 261 },  // Assento 5
+      { x: 787, y: 261 },  // Assento 6
+      { x: 909, y: 265 },  // Assento 7
+      { x: 1044, y: 261 }, // Assento 8
+      { x: 671, y: 467 },  // Assento 9
+      { x: 787, y: 471 },  // Assento 10
+      { x: 911, y: 467 },  // Assento 11
+      { x: 1037, y: 471 }, // Assento 12
+      { x: 673, y: 673 },  // Assento 13
+      { x: 789, y: 669 },  // Assento 14
+      { x: 915, y: 673 },  // Assento 15
+      { x: 1037, y: 675 }, // Assento 16
+      { x: 1248, y: 964 }, // Assento 17
+    ]
   }
 
 }
@@ -99,10 +128,29 @@ const stationConfigs = {
 // Real seat data will be loaded from API
 const stationSeats: Record<number, Seat[]> = {}
 
-export const SeatMap = ({ stationNumber, onSeatSelect, selectedSeat, stationId, selectedDate, timeRange, onTimeRangeChange }: SeatMapProps) => {
+export const SeatMap = ({ 
+  stationNumber, 
+  onSeatSelect, 
+  selectedSeat, 
+  selectedSeats: externalSelectedSeats,
+  selectAllMode: externalSelectAllMode,
+  stationId, 
+  selectedDate, 
+  timeRange, 
+  onTimeRangeChange,
+  onMultipleSeatsSelect,
+  onSelectAllModeChange
+}: SeatMapProps) => {
   const [hoveredSeat, setHoveredSeat] = useState<string>('')
   const [seats, setSeats] = useState<Seat[]>([])
   const [loading, setLoading] = useState(true)
+  const [internalSelectedSeats, setInternalSelectedSeats] = useState<string[]>([])
+  const [internalSelectAllMode, setInternalSelectAllMode] = useState(false)
+  
+  // Use external state if provided, otherwise use internal state
+  const selectedSeats = externalSelectedSeats ?? internalSelectedSeats
+  const selectAllMode = externalSelectAllMode ?? internalSelectAllMode
+
   const config = stationConfigs[stationNumber as keyof typeof stationConfigs]
   
   useEffect(() => {
@@ -142,7 +190,52 @@ export const SeatMap = ({ stationNumber, onSeatSelect, selectedSeat, stationId, 
 
   const handleSeatClick = (seatId: string, available: boolean) => {
     if (available) {
-      onSeatSelect(seatId)
+      if (selectAllMode) {
+        const newSelection = selectedSeats.includes(seatId) 
+          ? selectedSeats.filter(id => id !== seatId)
+          : [...selectedSeats, seatId]
+        
+        if (onMultipleSeatsSelect) {
+          onMultipleSeatsSelect(newSelection)
+        } else {
+          setInternalSelectedSeats(newSelection)
+        }
+      } else {
+        onSeatSelect(seatId)
+      }
+    }
+  }
+
+  const handleSelectAll = () => {
+    const availableSeats = seats.filter(s => s.available).map(s => s.id)
+    if (onMultipleSeatsSelect) {
+      onMultipleSeatsSelect(availableSeats)
+    } else {
+      setInternalSelectedSeats(availableSeats)
+    }
+  }
+
+  const handleClearSelection = () => {
+    if (onMultipleSeatsSelect) {
+      onMultipleSeatsSelect([])
+    } else {
+      setInternalSelectedSeats([])
+    }
+  }
+
+  const toggleSelectAllMode = () => {
+    const newMode = !selectAllMode
+    if (onSelectAllModeChange) {
+      onSelectAllModeChange(newMode)
+    } else {
+      setInternalSelectAllMode(newMode)
+    }
+    if (!newMode) {
+      if (onMultipleSeatsSelect) {
+        onMultipleSeatsSelect([])
+      } else {
+        setInternalSelectedSeats([])
+      }
     }
   }
 
@@ -161,6 +254,8 @@ export const SeatMap = ({ stationNumber, onSeatSelect, selectedSeat, stationId, 
     
     return 'Amanhã'
   }
+
+
 
   return (
     <div className="relative">
@@ -187,8 +282,8 @@ export const SeatMap = ({ stationNumber, onSeatSelect, selectedSeat, stationId, 
                 href={config.bgImage}
                 width="100%" 
                 height="100%"
-                opacity="0.6"
-                preserveAspectRatio="xMidYMid meet"
+                opacity={stationNumber === 6 ? "0.8" : "0.6"}
+                preserveAspectRatio={stationNumber === 6 ? "xMidYMid slice" : "xMidYMid meet"}
                 className="pointer-events-none"
               />
               
@@ -202,11 +297,11 @@ export const SeatMap = ({ stationNumber, onSeatSelect, selectedSeat, stationId, 
               
               {/* Título da estação */}
               <text 
-                x="720" 
-                y="80" 
-                textAnchor="middle" 
+                x={stationNumber === 6 ? "1750" : "960"}
+                y={stationNumber === 6 ? "80" : "80"}
+                textAnchor={stationNumber === 6 ? "end" : "middle"}
                 className="font-bold fill-gray-800 pointer-events-none"
-                style={{ fontSize: 'clamp(28px, 4vw, 42px)' }}
+                style={{ fontSize: stationNumber === 6 ? 'clamp(20px, 2.5vw, 32px)' : 'clamp(28px, 4vw, 42px)' }}
               >
                 {config.name}
               </text>
@@ -214,7 +309,7 @@ export const SeatMap = ({ stationNumber, onSeatSelect, selectedSeat, stationId, 
               {/* Assentos posicionados precisamente */}
               {seats.map((seat, index) => {
                 const isHovered = hoveredSeat === seat.id
-                const isSelected = selectedSeat === seat.id
+                const isSelected = selectAllMode ? selectedSeats.includes(seat.id) : selectedSeat === seat.id
                 
                 return (
                   <motion.g
@@ -340,6 +435,38 @@ export const SeatMap = ({ stationNumber, onSeatSelect, selectedSeat, stationId, 
           </div>
         </div>
         
+        {/* Botão Selecionar Todos */}
+        <div className="flex justify-center mb-4">
+          <button
+            onClick={toggleSelectAllMode}
+            className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all border ${
+              selectAllMode 
+                ? 'bg-orange-50 text-orange-700 border-orange-200 hover:bg-orange-100' 
+                : 'bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100'
+            }`}
+          >
+            {selectAllMode ? 'Modo Individual' : 'Reservar Estação Inteira'}
+          </button>
+        </div>
+
+        {/* Controles de Seleção Múltipla */}
+        {selectAllMode && (
+          <div className="flex justify-center gap-2 mb-4">
+            <button
+              onClick={handleSelectAll}
+              className="px-2 py-1 bg-green-50 text-green-700 border border-green-200 rounded text-xs hover:bg-green-100 transition-colors"
+            >
+              Todos ({seats.filter(s => s.available).length})
+            </button>
+            <button
+              onClick={handleClearSelection}
+              className="px-2 py-1 bg-gray-50 text-gray-700 border border-gray-200 rounded text-xs hover:bg-gray-100 transition-colors"
+            >
+              Limpar
+            </button>
+          </div>
+        )}
+
         {/* Legend */}
         <div className="flex flex-wrap justify-center gap-6 sm:gap-10 mb-4 sm:mb-6 text-sm sm:text-base">
           <div className="flex items-center space-x-3">
@@ -428,7 +555,8 @@ export const SeatMap = ({ stationNumber, onSeatSelect, selectedSeat, stationId, 
           )}
         </div>
         
-        {selectedSeat && (
+        {/* Seleção Individual */}
+        {selectedSeat && !selectAllMode && (
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -442,6 +570,27 @@ export const SeatMap = ({ stationNumber, onSeatSelect, selectedSeat, stationId, 
             </p>
           </motion.div>
         )}
+
+        {/* Seleção Múltipla */}
+        {selectAllMode && selectedSeats.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mt-4 p-4 sm:p-5 bg-green-50 border-2 border-green-200 rounded-xl text-center shadow-sm"
+          >
+            <p className="text-green-900 font-bold text-lg sm:text-xl">
+              {selectedSeats.length} assentos selecionados
+            </p>
+            <p className="text-green-700 text-sm sm:text-base mt-2">
+              Assentos: {selectedSeats.map(id => id.split('-')[1]).join(', ')}
+            </p>
+            <p className="text-green-700 text-sm sm:text-base mt-1 font-medium">
+              Clique em "Confirmar" para reservar toda a seleção
+            </p>
+          </motion.div>
+        )}
+
+
 
       </div>
     </div>

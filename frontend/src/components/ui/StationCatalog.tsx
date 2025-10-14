@@ -70,12 +70,23 @@ const stationDetails: Record<number, StationDetails> = {
     capacity: 6, 
     features: ['Layout flexível', 'Monitores móveis', 'Mesa ajustável', 'Configuração personalizada'],
     seatMap: 'station5-map.svg'
+  },
+  6: {
+    id: '6',
+    name: 'Estação 6 - Sala de Eventos',
+    description: 'Sala de eventos com layout flexível para reuniões e apresentações',
+    image: '/assets/images/reuniao.jpeg',
+    capacity: 17,
+    features: ['Mesas ajustáveis', 'Configuração personalizada', 'Data show e tela', '2 ar condicionados', 'Cortina eletrônica'],
+    seatMap: 'station6-map.svg'
   }
 }
 
 export const StationCatalog = ({ stations, selectedStation, onStationSelect, onSeatSelect, compact = false, showStatus = false, onBookingConfirm, onModalStateChange }: StationCatalogProps) => {
   const [selectedStationDetails, setSelectedStationDetails] = useState<StationDetails | null>(null)
   const [selectedSeat, setSelectedSeat] = useState<string>('')
+  const [selectedSeats, setSelectedSeats] = useState<string[]>([])
+  const [selectAllMode, setSelectAllMode] = useState(false)
   const [bookingData, setBookingData] = useState({
     date: new Date().toISOString().split('T')[0],
     startTime: '',
@@ -232,12 +243,16 @@ export const StationCatalog = ({ stations, selectedStation, onStationSelect, onS
                       stationId={selectedStation}
                       selectedDate={bookingData.date}
                       selectedSeat={selectedSeat}
+                      selectedSeats={selectedSeats}
+                      selectAllMode={selectAllMode}
                       onSeatSelect={(seatId) => {
                         setSelectedSeat(seatId)
                         if (onSeatSelect && selectedStation) {
                           onSeatSelect(selectedStation, seatId)
                         }
                       }}
+                      onMultipleSeatsSelect={setSelectedSeats}
+                      onSelectAllModeChange={setSelectAllMode}
                     />
                   </div>
                   
@@ -265,11 +280,19 @@ export const StationCatalog = ({ stations, selectedStation, onStationSelect, onS
                 </div>
 
                 {/* Booking Form */}
-                {selectedSeat && (
+                {(selectedSeat || (selectAllMode && selectedSeats.length > 0)) && (
                   <div className="mt-6 sm:mt-8 p-6 bg-blue-50 rounded-xl border border-blue-200">
                     <h3 className="font-bold text-lg text-blue-900 mb-4">
-                      Reservar Assento {selectedSeat.split('-')[1]} - {selectedStationDetails.name}
+                      {selectAllMode && selectedSeats.length > 0 
+                        ? `Reservar ${selectedSeats.length} Assentos - ${selectedStationDetails.name}`
+                        : `Reservar Assento ${selectedSeat?.split('-')[1]} - ${selectedStationDetails.name}`
+                      }
                     </h3>
+                    {selectAllMode && selectedSeats.length > 0 && (
+                      <p className="text-blue-700 text-sm mb-4">
+                        Assentos selecionados: {selectedSeats.map(id => id.split('-')[1]).join(', ')}
+                      </p>
+                    )}
                     
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
@@ -330,20 +353,37 @@ export const StationCatalog = ({ stations, selectedStation, onStationSelect, onS
                   </button>
                   <button
                     onClick={async () => {
-                      if (selectedSeat && bookingData.startTime && bookingData.endTime && onBookingConfirm && !isSubmitting) {
+                      const hasSelection = selectedSeat || (selectAllMode && selectedSeats.length > 0)
+                      if (hasSelection && bookingData.startTime && bookingData.endTime && onBookingConfirm && !isSubmitting) {
                         setIsSubmitting(true)
                         setLoading(true)
                         try {
-                          await onBookingConfirm({
-                            stationId: selectedStation,
-                            seat: selectedSeat,
-                            date: bookingData.date,
-                            startTime: bookingData.startTime,
-                            endTime: bookingData.endTime
-                          })
+                          if (selectAllMode && selectedSeats.length > 0) {
+                            // Múltiplas reservas
+                            for (const seatId of selectedSeats) {
+                              await onBookingConfirm({
+                                stationId: selectedStation,
+                                seat: seatId,
+                                date: bookingData.date,
+                                startTime: bookingData.startTime,
+                                endTime: bookingData.endTime
+                              })
+                            }
+                          } else {
+                            // Reserva individual
+                            await onBookingConfirm({
+                              stationId: selectedStation,
+                              seat: selectedSeat,
+                              date: bookingData.date,
+                              startTime: bookingData.startTime,
+                              endTime: bookingData.endTime
+                            })
+                          }
                           // Only close modal and reset if successful
                           setSelectedStationDetails(null)
                           setSelectedSeat('')
+                          setSelectedSeats([])
+                          setSelectAllMode(false)
                           setBookingData({
                             date: new Date().toISOString().split('T')[0],
                             startTime: '',
@@ -359,17 +399,18 @@ export const StationCatalog = ({ stations, selectedStation, onStationSelect, onS
                         }
                       }
                     }}
-                    disabled={!selectedSeat || !bookingData.startTime || !bookingData.endTime || loading || isSubmitting}
+                    disabled={!(selectedSeat || (selectAllMode && selectedSeats.length > 0)) || !bookingData.startTime || !bookingData.endTime || loading || isSubmitting}
                     className={`px-6 sm:px-8 py-3 rounded-lg transition-colors text-base sm:text-lg font-semibold order-1 sm:order-2 min-h-[48px] ${
-                      selectedSeat && bookingData.startTime && bookingData.endTime && !loading
+                      (selectedSeat || (selectAllMode && selectedSeats.length > 0)) && bookingData.startTime && bookingData.endTime && !loading
                         ? 'bg-green-600 text-white hover:bg-green-700 shadow-lg' 
                         : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                     }`}
                   >
                     {isSubmitting ? 'Processando...' : 
                      loading ? 'Confirmando...' : 
-                     selectedSeat && bookingData.startTime && bookingData.endTime ? 'Confirmar Reserva' : 
-                     !selectedSeat ? 'Selecione um Assento' : 'Preencha os horários'}
+                     (selectedSeat || (selectAllMode && selectedSeats.length > 0)) && bookingData.startTime && bookingData.endTime ? 
+                       (selectAllMode && selectedSeats.length > 0 ? `Confirmar ${selectedSeats.length} Reservas` : 'Confirmar Reserva') : 
+                     !(selectedSeat || (selectAllMode && selectedSeats.length > 0)) ? 'Selecione um Assento' : 'Preencha os horários'}
                   </button>
                 </div>
               </div>

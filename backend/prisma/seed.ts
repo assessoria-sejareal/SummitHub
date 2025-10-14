@@ -30,7 +30,7 @@ async function main() {
 
   // Create stations
   const stations = []
-  for (let i = 1; i <= 5; i++) {
+  for (let i = 1; i <= 6; i++) {
     const station = await prisma.station.upsert({
       where: { number: i },
       update: {},

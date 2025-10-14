@@ -1,6 +1,21 @@
 # Summit Hub - Sistema de Reservas
 
-Sistema web profissional para reserva de 20 estações de trabalho para traders com segurança empresarial e interface moderna.
+Sistema web profissional para reserva de estações de trabalho para traders com segurança empresarial e interface moderna.
+
+## 🏢 Estações Disponíveis
+
+- **Estação 1**: Área VIP com vista panorâmica (12 assentos)
+- **Estação 2**: Ambiente executivo privativo (4 assentos)
+- **Estação 3**: Espaço privativo individual (1 assento)
+- **Estação 4**: Ambiente silencioso individual (1 assento)
+- **Estação 5**: Espaço flexível adaptável (6 assentos)
+- **Estação 6**: Sala de Eventos com layout flexível (17 assentos)
+  - Mesas ajustáveis
+  - Configuração personalizada
+  - Data show e tela
+  - 2 ar condicionados
+  - Cortina eletrônica
+  - Tempo: Meio período médio
 
 ## 🚀 Tecnologias
 
@@ -110,7 +125,7 @@ summit-hub/
 
 ### Tabelas Principais
 - **users**: Usuários completos (nome, email, CPF, telefone, empresa)
-- **stations**: 5 estações com status (ACTIVE/MAINTENANCE)
+- **stations**: 6 estações com status (ACTIVE/MAINTENANCE)
 - **bookings**: Reservas com campos de cancelamento
 - **admin_actions**: Histórico de ações administrativas
 
