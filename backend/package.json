@@ -5,8 +5,8 @@
   "main": "dist/server.js",
   "scripts": {
     "dev": "tsx watch src/server.ts",
-    "build": "tsc && prisma generate",
-    "start": "prisma db push --accept-data-loss && tsx prisma/seed.ts && node dist/server.js",
+    "build": "tsc && prisma generate && tsc prisma/seed.ts --outDir dist/prisma --moduleResolution node --esModuleInterop",
+    "start": "prisma db push --accept-data-loss && node dist/prisma/seed.js && node dist/server.js",
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
     "db:migrate": "prisma migrate deploy",
